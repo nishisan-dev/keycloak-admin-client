@@ -16,6 +16,8 @@
  */
 package dev.nishisan.keycloak.admin.client;
 
+import dev.nishisan.keycloak.admin.client.config.SSOConfig;
+
 /**
  * Simple Client for Keycloak admin
  *
@@ -23,16 +25,10 @@ package dev.nishisan.keycloak.admin.client;
  */
 public class KeycloakAdminClient {
 
-    private String clientId;
-    private String clientSecret;
-    private String realm;
-    private String baseUrl;
+    private SSOConfig config;
 
     public KeycloakAdminClient(String clientId, String clientSecret, String realm, String baseUrl) {
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
-        this.realm = realm;
-        this.baseUrl = baseUrl;
+        this.config = new SSOConfig(clientId, clientSecret, realm, baseUrl);
     }
 
 }
