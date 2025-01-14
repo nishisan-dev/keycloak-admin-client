@@ -32,6 +32,9 @@ public class SSOConfig {
     private String baseUrl;
     private Map<String, String> headers = new ConcurrentHashMap<>();
 
+    public SSOConfig() {
+    }
+
     public SSOConfig(String clientId, String clientSecret, String realm, String baseUrl) {
         this.clientId = clientId;
         this.clientSecret = clientSecret;

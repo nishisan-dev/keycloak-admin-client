@@ -14,36 +14,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package dev.nishisan.keycloak.admin.client;
+package dev.nishisan.keycloak.admin.test;
 
-import dev.nishisan.keycloak.admin.client.auth.KeyCloakOAuthClientManager;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Simple Client for Keycloak admin
  *
  * @author Lucas Nishimura < lucas at nishisan.dev >
  */
-public class KeycloakAdminClient {
+public class YamlTest {
 
-    private final SSOConfig config;
-    private KeyCloakOAuthClientManager tokenManager;
+    public static void main(String[] args) {
+        SSOConfig config = new SSOConfig("a", "b", "c", "d");
+        // Create an ObjectMapper mapper for YAML
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
-    public KeycloakAdminClient(SSOConfig config) {
-        this.config = config;
-        this.tokenManager = new KeyCloakOAuthClientManager(config);
+        try {
+            mapper.writeValue(new File("config/sample.yaml"), config);
+        } catch (IOException ex) {
+            Logger.getLogger(YamlTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
-
-    public KeycloakAdminClient(String clientId, String clientSecret, String realm, String baseUrl) {
-        this.config = new SSOConfig(clientId, clientSecret, realm, baseUrl);
-        this.tokenManager = new KeyCloakOAuthClientManager(config);        
-    }
-
-    public KeyCloakOAuthClientManager getTokenManager() {
-        return tokenManager;
-    }
-
-    
-    
-    
 }

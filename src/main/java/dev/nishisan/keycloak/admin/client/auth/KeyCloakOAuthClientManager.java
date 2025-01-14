@@ -53,27 +53,54 @@ public class KeyCloakOAuthClientManager {
      */
     private TokenResponseWrapper generateToken() throws IOException {
         if (this.currentToken != null) {
-
+            if (this.currentToken.isExpired()) {
+                try {
+                    return this.refreshToken();
+                } catch (IOException ex) {
+                    //
+                    // Failed will try to issue a new one..
+                    //
+                    this.currentToken = null;
+                }
+            } else {
+                //
+                // Reuse the previous token
+                //
+                return this.currentToken;
+            }
         }
+        //
+        // Issue a new Token
+        //
         GenericUrl url = new GenericUrl(this.config.getTokenUrl());
         ClientCredentialsTokenRequest clientTokenRequest
                 = new ClientCredentialsTokenRequest(new NetHttpTransport(),
                         JSON_FACTORY, url);
         clientTokenRequest.setGrantType("client_credentials");
         clientTokenRequest.setClientAuthentication(new BasicAuthentication(config.getClientId(), config.getClientSecret()));
-
         clientTokenRequest.setRequestInitializer(new CustomHttpRequestInitializer(this.config.getExtraHeaders()));
-
         TokenResponse response = clientTokenRequest.execute();
-
         return new TokenResponseWrapper(response);
     }
 
-    private TokenResponseWrapper refreshToken() {
-        if (this.currentToken != null) {
-            GenericUrl url = new GenericUrl(this.config.getTokenUrl());
-            RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(new NetHttpTransport(), JSON_FACTORY, url, this.currentToken.getRefreshToken());
+    /**
+     * Refresh The Token
+     *
+     * @return
+     * @throws IOException
+     */
+    private TokenResponseWrapper refreshToken() throws IOException {
+        GenericUrl url = new GenericUrl(this.config.getTokenUrl());
+        RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(new NetHttpTransport(), JSON_FACTORY, url, this.currentToken.getRefreshToken());
+        TokenResponse a = refreshTokenRequest.execute();
+        this.currentToken = new TokenResponseWrapper(a);
+        return this.currentToken;
+    }
+
+    public TokenResponseWrapper getToken() throws IOException {
+        if (this.currentToken == null) {
+            return this.generateToken();
         }
-        return null;
+        return this.currentToken;
     }
 }
