@@ -25,8 +25,19 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
+import dev.nishisan.keycloak.admin.client.events.ITokenEventListener;
+import dev.nishisan.keycloak.admin.client.events.SafeEventListener;
 import dev.nishisan.keycloak.admin.client.http.CustomHttpRequestInitializer;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Handles The Keycloak Token Management
@@ -38,8 +49,10 @@ public class KeyCloakOAuthClientManager {
 
     private final SSOConfig config;
     private final JsonFactory JSON_FACTORY = new GsonFactory();
-
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private TokenResponseWrapper currentToken;
+    private Map<String, SafeEventListener> listeners = new ConcurrentHashMap<>();
+    private final Logger logger = LoggerFactory.getLogger(KeyCloakOAuthClientManager.class);
 
     public KeyCloakOAuthClientManager(SSOConfig config) {
         this.config = config;
@@ -79,8 +92,19 @@ public class KeyCloakOAuthClientManager {
         clientTokenRequest.setGrantType("client_credentials");
         clientTokenRequest.setClientAuthentication(new BasicAuthentication(config.getClientId(), config.getClientSecret()));
         clientTokenRequest.setRequestInitializer(new CustomHttpRequestInitializer(this.config.getExtraHeaders()));
-        TokenResponse response = clientTokenRequest.execute();
-        return new TokenResponseWrapper(response);
+        TokenResponse tokenResponse = clientTokenRequest.execute();
+
+        TokenResponseWrapper response = new TokenResponseWrapper(tokenResponse);
+        logger.debug("Token Issued");
+        long milisBefore = 300;
+        Instant executionTime = response.getExpirantionTime().minusMillis(milisBefore);
+        long delay = Duration.between(Instant.now(), executionTime).toMillis();
+        scheduler.schedule(new TokenManagementThread(), delay, TimeUnit.MILLISECONDS);
+        logger.debug("Refresh Scheduled for:{} ms", delay);
+        listeners.forEach((k, v) -> {
+            v.onTokenIssued(response);
+        });
+        return response;
     }
 
     /**
@@ -92,8 +116,16 @@ public class KeyCloakOAuthClientManager {
     private TokenResponseWrapper refreshToken() throws IOException {
         GenericUrl url = new GenericUrl(this.config.getTokenUrl());
         RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(new NetHttpTransport(), JSON_FACTORY, url, this.currentToken.getRefreshToken());
+        //
+        // Prevents loop
+        //        
+        this.currentToken = null;
         TokenResponse a = refreshTokenRequest.execute();
         this.currentToken = new TokenResponseWrapper(a);
+        logger.debug("Token Refreshed");
+        listeners.forEach((k, v) -> {
+            v.onTokenRefreshed(this.currentToken);
+        });
         return this.currentToken;
     }
 
@@ -102,5 +134,26 @@ public class KeyCloakOAuthClientManager {
             return this.generateToken();
         }
         return this.currentToken;
+    }
+
+    private class TokenManagementThread implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                logger.debug("Refreshing Token");
+                /**
+                 * De fato renova o token :)
+                 */
+                generateToken();
+            } catch (IOException ex) {
+                logger.error("Failed to Refresh Token", ex);
+            }
+        }
+    }
+
+    public void registerListener(ITokenEventListener listener) {
+        SafeEventListener safeListener = new SafeEventListener(listener);
+        this.listeners.put(listener.getUniqueName(), safeListener);
     }
 }

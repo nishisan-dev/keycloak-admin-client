@@ -28,6 +28,7 @@ public class KeycloakAdminClient {
 
     private final SSOConfig config;
     private KeyCloakOAuthClientManager tokenManager;
+    
 
     public KeycloakAdminClient(SSOConfig config) {
         this.config = config;

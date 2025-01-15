@@ -21,8 +21,10 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import dev.nishisan.keycloak.admin.client.KeycloakAdminClient;
 import dev.nishisan.keycloak.admin.client.auth.TokenResponseWrapper;
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
+import dev.nishisan.keycloak.admin.client.events.ITokenEventListener;
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,8 +48,30 @@ public class TokenTest {
             config = mapper.readValue(new File("config/sample.yaml"), SSOConfig.class);
 
             KeycloakAdminClient client = new KeycloakAdminClient(config);
+
+            client.getTokenManager().registerListener(new ITokenEventListener() {
+                @Override
+                public void onTokenIssued(TokenResponseWrapper issuedToken) {
+                    System.out.println("::: Token Issued:" + issuedToken.getAccessToken());
+                }
+
+                @Override
+                public void onTokenRefreshed(TokenResponseWrapper refreshedToken) {
+                    System.out.println("::: Token Refresed:" + refreshedToken.getRefreshToken());
+                }
+
+                @Override
+                public String getUniqueName() {
+                    return "Teste";
+                }
+
+            });
+
             TokenResponseWrapper t = client.getTokenManager().getToken();
-            System.out.println("Token OK:" + t.getAccessToken());
+
+            System.out.println("  Token OK:" + t.getAccessToken());
+            System.out.println("    Now Is:" + Instant.now());
+            System.out.println("Refresh AT:" + t.getExpirantionTime());
         } catch (IOException ex) {
             Logger.getLogger(TokenTest.class.getName()).log(Level.SEVERE, null, ex);
         }

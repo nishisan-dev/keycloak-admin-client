@@ -50,7 +50,19 @@
             <artifactId>jackson-dataformat-yaml</artifactId>
             <version>2.18.2</version>
         </dependency>
+        <!-- API SLF4J -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.16</version>
+        </dependency>
 
+        <!-- Implementação Simple -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.16</version>
+        </dependency>
 
     </dependencies>
     <properties>
