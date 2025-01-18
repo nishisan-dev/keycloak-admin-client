@@ -14,49 +14,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package dev.nishisan.keycloak.admin.client.types;
+package dev.nishisan.keycloak.admin.client.exception;
 
 /**
  *
  * @author Lucas Nishimura < lucas at nishisan.dev >
  */
-public class Credentials {
+public class CreateUserException extends Exception {
 
-    private String type;
-    private String value;
-    private Boolean temporary;
-
-    public Credentials() {
+    public CreateUserException() {
     }
 
-    public Credentials(String type, String value, Boolean temporary) {
-        this.type = type;
-        this.value = value;
-        this.temporary = temporary;
+    public CreateUserException(String message) {
+        super(message);
     }
 
-    public String getType() {
-        return type;
+    public CreateUserException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public CreateUserException(Throwable cause) {
+        super(cause);
     }
 
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public Boolean getTemporary() {
-        return temporary;
-    }
-
-    public void setTemporary(Boolean temporary) {
-        this.temporary = temporary;
+    public CreateUserException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
 
 }

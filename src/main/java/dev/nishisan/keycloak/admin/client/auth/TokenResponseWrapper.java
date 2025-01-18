@@ -18,8 +18,6 @@ package dev.nishisan.keycloak.admin.client.auth;
 
 import com.google.api.client.auth.oauth2.TokenResponse;
 import java.time.Instant;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 /**
  *
@@ -30,7 +28,6 @@ public class TokenResponseWrapper {
 
     private final TokenResponse response;
     private Instant expirationTime;
-   
 
     public TokenResponseWrapper(TokenResponse response) {
         this.response = response;

@@ -22,6 +22,8 @@ import dev.nishisan.keycloak.admin.client.KeycloakAdminClient;
 import dev.nishisan.keycloak.admin.client.auth.TokenResponseWrapper;
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
 import dev.nishisan.keycloak.admin.client.events.ITokenEventListener;
+import dev.nishisan.keycloak.admin.client.exception.CreateUserException;
+import dev.nishisan.keycloak.admin.client.types.User;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
@@ -49,6 +51,9 @@ public class TokenTest {
 
             KeycloakAdminClient client = new KeycloakAdminClient(config);
 
+            /**
+             * Register a Listener for Debug
+             */
             client.getTokenManager().registerListener(new ITokenEventListener() {
                 @Override
                 public void onTokenIssued(TokenResponseWrapper issuedToken) {
@@ -72,6 +77,18 @@ public class TokenTest {
             System.out.println("  Token OK:" + t.getAccessToken());
             System.out.println("    Now Is:" + Instant.now());
             System.out.println("Refresh AT:" + t.getExpirantionTime());
+
+            /**
+             * Creates a New User
+             */
+            User user = new User("nishimura-1", "teste@123", "teste@test.com");
+
+            try {
+                client.getUserManager().createUser(user);
+            } catch (CreateUserException ex) {
+                Logger.getLogger(TokenTest.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
         } catch (IOException ex) {
             Logger.getLogger(TokenTest.class.getName()).log(Level.SEVERE, null, ex);
         }

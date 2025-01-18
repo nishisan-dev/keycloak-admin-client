@@ -33,6 +33,15 @@ public class User {
     private Boolean emailVerified;
     private List<Credentials> credentials = new ArrayList<>();
 
+    public User(String username, String password, String email) {
+        this.username = username;
+        this.email = email;
+        Credentials c = new Credentials("password", password, false);
+        this.credentials.add(c);
+        this.enabled = true;
+        this.emailVerified = true;
+    }
+
     public User(String username, Boolean enabled, String firstName, String lastName, String email, Boolean emailVerified, Credentials credentials) {
         this.username = username;
         this.enabled = enabled;

@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,7 @@ public class KeyCloakOAuthClientManager {
     private TokenResponseWrapper currentToken;
     private Map<String, SafeEventListener> listeners = new ConcurrentHashMap<>();
     private final Logger logger = LoggerFactory.getLogger(KeyCloakOAuthClientManager.class);
+    private AtomicBoolean runing = new AtomicBoolean(true);
 
     public KeyCloakOAuthClientManager(SSOConfig config) {
         this.config = config;
@@ -140,20 +142,29 @@ public class KeyCloakOAuthClientManager {
 
         @Override
         public void run() {
-            try {
-                logger.debug("Refreshing Token");
-                /**
-                 * De fato renova o token :)
-                 */
-                generateToken();
-            } catch (IOException ex) {
-                logger.error("Failed to Refresh Token", ex);
+            if (runing.get()) {
+                try {
+
+                    logger.debug("Refreshing Token");
+                    /**
+                     * De fato renova o token :)
+                     */
+                    generateToken();
+                } catch (IOException ex) {
+                    logger.error("Failed to Refresh Token", ex);
+                }
             }
         }
+    }
+
+    public void shutdown() {
+        this.runing.set(false);
+        this.scheduler.shutdown();
     }
 
     public void registerListener(ITokenEventListener listener) {
         SafeEventListener safeListener = new SafeEventListener(listener);
         this.listeners.put(listener.getUniqueName(), safeListener);
     }
+
 }
