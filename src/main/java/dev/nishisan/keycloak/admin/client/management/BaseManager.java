@@ -54,9 +54,22 @@ public class BaseManager {
         Request req = builder.build();
 
         Response r = this.httpClient.newCall(req).execute();
-        r.headers().forEach((s) -> {
-            System.out.println("[" + s.getFirst() + "]:=" + s.getSecond());
-        });
         return r;
+    }
+
+    public Response putJson(String url, Object payload) throws IOException {
+        Request.Builder builder = new Request.Builder();
+        String jsonPayLoad = this.gson().toJson(payload);
+        RequestBody body = RequestBody.create(jsonPayLoad, MediaType.parse("application/json"));
+        builder.url(url).method("PUT", body);
+        Request req = builder.build();
+        return this.httpClient.newCall(req).execute();
+    }
+
+    public Response get(String url) throws IOException {
+        Request.Builder builder = new Request.Builder();
+        builder.url(url).get();
+        Request req = builder.build();
+        return this.httpClient.newCall(req).execute();
     }
 }
