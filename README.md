@@ -8,8 +8,8 @@ A small Java library to interact with Keycloak’s Admin REST API. It manages OA
 - Auto token refresh with scheduled tasks and event callbacks
 - OkHttp client with Bearer token interceptor
 - User operations: create user, find user, change password, update email
-- User role mappings (realm roles): add/remove by name or payload
-- Realm role operations: create role, list roles, get role by name (with id), delete role
+- User role mappings: assign and remove realm-level roles
+- Realm operations: create realm roles
 - Simple types: `User`, `Credentials`, `RealmRole`
 
 ## Requirements
@@ -107,6 +107,24 @@ kc.getUserManager().removeRealmRoles(userId, "auditor");
 kc.getUserManager().removeRealmRole(userId, new RealmRole("admin"));
 ```
 
+### Realm roles (create and assign/remove)
+
+```java
+import dev.nishisan.keycloak.admin.client.types.RealmRole;
+
+// Create a realm role
+RealmRole viewer = new RealmRole("viewer", "Can view resources");
+viewer = kc.getRealmManager().createRole(viewer); // id is populated if created
+
+// Assign realm roles to a user
+kc.getUserManager().addRealmRole(newUser.getId(), viewer); // using the role object
+kc.getUserManager().addRealmRoles(newUser.getId(), "editor", "auditor"); // by role names
+
+// Remove realm roles from a user
+kc.getUserManager().removeRealmRole(newUser.getId(), viewer);
+kc.getUserManager().removeRealmRoles(newUser.getId(), "auditor");
+```
+
 ### Token events (optional)
 
 ```java
@@ -184,10 +202,9 @@ To consume from GitHub Packages, configure your Maven settings with the `github`
   - `clientId`, `clientSecret`, `realm`, `baseUrl`, computed `getTokenUrl()`
 - `management.UserManager`
   - `createUser`, `findUser`, `changePassword`, `updateEmail`
-  - Realm role mappings: `addRealmRoles(String userId, List<RealmRole> roles)`, `addRealmRoles(String userId, String... roleNames)`, `addRealmRole(String userId, RealmRole role)`,
-    `removeRealmRoles(String userId, List<RealmRole> roles)`, `removeRealmRoles(String userId, String... roleNames)`, `removeRealmRole(String userId, RealmRole role)`
+  - Role mappings: `addRealmRole`, `addRealmRoles(List)`, `addRealmRoles(String...)`, `removeRealmRole`, `removeRealmRoles(List)`, `removeRealmRoles(String...)`
 - `management.RealmManager`
-  - Realm roles: `createRole(RealmRole role)`, `listRoles()`, `getRoleByName(String roleName)`, `deleteRole(String roleName)`
+  - Realm roles: `createRole`
 - `types.User`, `types.Credentials`, `types.RealmRole`
   - Minimal models mapped to Keycloak payloads
 - `events.ITokenEventListener`, `events.SafeEventListener`
