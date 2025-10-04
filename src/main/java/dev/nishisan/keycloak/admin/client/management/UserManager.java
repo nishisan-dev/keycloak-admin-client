@@ -18,6 +18,7 @@ package dev.nishisan.keycloak.admin.client.management;
 
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
 import dev.nishisan.keycloak.admin.client.exception.CreateUserException;
+import dev.nishisan.keycloak.admin.client.exception.SSOIOException;
 import dev.nishisan.keycloak.admin.client.types.RealmRole;
 import dev.nishisan.keycloak.admin.client.types.User;
 import okhttp3.OkHttpClient;
@@ -44,10 +45,10 @@ public class UserManager extends BaseManager {
      *
      * @param user The user payload to create
      * @return the same user instance with id populated
-     * @throws IOException on network errors
-     * @throws CreateUserException when Keycloak rejects the creation
+     * @throws SSOIOException em erros de rede
+     * @throws CreateUserException quando o Keycloak rejeita a criação
      */
-    public User createUser(User user) throws IOException, CreateUserException {
+    public User createUser(User user) throws SSOIOException, CreateUserException {
         // Target URL
         String targetUrl = this.config.getBaseUrl() + "/admin/realms/" + this.config.getRealm() + "/users";
 
@@ -65,7 +66,7 @@ public class UserManager extends BaseManager {
             }
             return user;
         } catch (IOException ex) {
-            throw new CreateUserException(ex);
+            throw new SSOIOException(ex);
         }
     }
 
@@ -73,27 +74,31 @@ public class UserManager extends BaseManager {
      * Finds a user by username or email. Returns the first exact match or null if not found.
      * @param usernameOrEmail the username or email to search for
      * @return User or null
-     * @throws IOException on network errors
+     * @throws SSOIOException em erros de rede
      */
-    public User findUser(String usernameOrEmail) throws IOException {
-        String queryKey = usernameOrEmail.contains("@") ? "email" : "username";
-        String url = this.config.getBaseUrl()
-                + "/admin/realms/" + this.config.getRealm()
-                + "/users?" + queryKey + "=" + okhttp3.HttpUrl.parse("http://x/" + usernameOrEmail).encodedPath().substring(1)
-                + "&exact=true";
-        try (Response r = this.get(url)) {
-            if (!r.isSuccessful()) {
+    public User findUser(String usernameOrEmail) throws SSOIOException {
+        try {
+            String queryKey = usernameOrEmail.contains("@") ? "email" : "username";
+            String url = this.config.getBaseUrl()
+                    + "/admin/realms/" + this.config.getRealm()
+                    + "/users?" + queryKey + "=" + okhttp3.HttpUrl.parse("http://x/" + usernameOrEmail).encodedPath().substring(1)
+                    + "&exact=true";
+            try (Response r = this.get(url)) {
+                if (!r.isSuccessful()) {
+                    return null;
+                }
+                String json = r.body() != null ? r.body().string() : "";
+                if (json == null || json.trim().isEmpty() || json.trim().equals("[]")) {
+                    return null;
+                }
+                User[] users = this.gson().fromJson(json, User[].class);
+                if (users != null && users.length > 0) {
+                    return users[0];
+                }
                 return null;
             }
-            String json = r.body() != null ? r.body().string() : "";
-            if (json == null || json.trim().isEmpty() || json.trim().equals("[]")) {
-                return null;
-            }
-            User[] users = this.gson().fromJson(json, User[].class);
-            if (users != null && users.length > 0) {
-                return users[0];
-            }
-            return null;
+        } catch (IOException ex) {
+            throw new SSOIOException(ex);
         }
     }
 
@@ -103,14 +108,18 @@ public class UserManager extends BaseManager {
      * @param newPassword new password value
      * @param temporary whether the new password is temporary
      * @return true if password was changed (204 status)
-     * @throws IOException on network errors
+     * @throws SSOIOException em erros de rede
      */
-    public boolean changePassword(String userId, String newPassword, boolean temporary) throws IOException {
+    public boolean changePassword(String userId, String newPassword, boolean temporary) throws SSOIOException {
         String url = this.config.getBaseUrl() + "/admin/realms/" + this.config.getRealm() + "/users/" + userId + "/reset-password";
         dev.nishisan.keycloak.admin.client.types.Credentials payload =
                 new dev.nishisan.keycloak.admin.client.types.Credentials("password", newPassword, temporary);
-        try (Response r = this.putJson(url, payload)) {
-            return r.code() == 204;
+        try {
+            try (Response r = this.putJson(url, payload)) {
+                return r.code() == 204;
+            }
+        } catch (IOException ex) {
+            throw new SSOIOException(ex);
         }
     }
 
@@ -119,15 +128,19 @@ public class UserManager extends BaseManager {
      * @param userId user id
      * @param newEmail new email
      * @return true if update succeeded (204 status)
-     * @throws IOException on network errors
+     * @throws SSOIOException em erros de rede
      */
-    public boolean updateEmail(String userId, String newEmail) throws IOException {
+    public boolean updateEmail(String userId, String newEmail) throws SSOIOException {
         String url = this.config.getBaseUrl() + "/admin/realms/" + this.config.getRealm() + "/users/" + userId;
         // Minimal payload to update email
         class EmailUpdate { String email; Boolean emailVerified; EmailUpdate(String e){ this.email=e; this.emailVerified=false; } }
         EmailUpdate payload = new EmailUpdate(newEmail);
-        try (Response r = this.putJson(url, payload)) {
-            return r.code() == 204;
+        try {
+            try (Response r = this.putJson(url, payload)) {
+                return r.code() == 204;
+            }
+        } catch (IOException ex) {
+            throw new SSOIOException(ex);
         }
     }
 
@@ -136,30 +149,33 @@ public class UserManager extends BaseManager {
      * @param userId Keycloak user id
      * @param roles list of realm roles (at minimum, name field should be set)
      * @return true if roles were added (204 status)
-     * @throws IOException on network errors
+     * @throws SSOIOException em erros de rede
      */
-    public boolean addRealmRoles(String userId, List<RealmRole> roles) throws IOException {
+    public boolean addRealmRoles(String userId, List<RealmRole> roles) throws SSOIOException {
         if (userId == null || userId.isBlank() || roles == null || roles.isEmpty()) {
             return false;
         }
         String url = this.config.getBaseUrl() + "/admin/realms/" + this.config.getRealm() + "/users/" + userId + "/role-mappings/realm";
-        try (Response r = this.postJson(url, roles)) {
-            if (r.code()==204){
-                logger.debug("Realm Roles added to user: {}", userId);
-                return true;
-            }else{
-                logger.warn("Failed to add realm roles to user: {}", userId);
-                logger.warn("Response: {}", r.body().string());
-                return false;
+        try {
+            try (Response r = this.postJson(url, roles)) {
+                if (r.code()==204){
+                    logger.debug("Realm Roles added to user: {}", userId);
+                    return true;
+                } else {
+                    logger.warn("Failed to add realm roles to user: {}", userId);
+                    logger.warn("Response: {}", r.body().string());
+                    return false;
+                }
             }
-
+        } catch (IOException ex) {
+            throw new SSOIOException(ex);
         }
     }
 
     /**
      * Convenience overload to add a single realm role to a user.
      */
-    public boolean addRealmRole(String userId, RealmRole role) throws IOException {
+    public boolean addRealmRole(String userId, RealmRole role) throws SSOIOException {
         if (role == null) return false;
         return addRealmRoles(userId, Collections.singletonList(role));
     }
@@ -167,7 +183,7 @@ public class UserManager extends BaseManager {
     /**
      * Convenience overload to add roles by their names.
      */
-    public boolean addRealmRoles(String userId, String... roleNames) throws IOException {
+    public boolean addRealmRoles(String userId, String... roleNames) throws SSOIOException {
         if (roleNames == null || roleNames.length == 0) return false;
         RealmRole[] roles = Arrays.stream(roleNames).filter(n -> n != null && !n.isBlank()).map(RealmRole::new).toArray(RealmRole[]::new);
         return addRealmRoles(userId, Arrays.asList(roles));
@@ -178,22 +194,26 @@ public class UserManager extends BaseManager {
      * @param userId Keycloak user id
      * @param roles list of realm roles to remove (at minimum, name field should be set)
      * @return true if roles were removed (204 status)
-     * @throws IOException on network errors
+     * @throws SSOIOException em erros de rede
      */
-    public boolean removeRealmRoles(String userId, List<RealmRole> roles) throws IOException {
+    public boolean removeRealmRoles(String userId, List<RealmRole> roles) throws SSOIOException {
         if (userId == null || userId.isBlank() || roles == null || roles.isEmpty()) {
             return false;
         }
         String url = this.config.getBaseUrl() + "/admin/realms/" + this.config.getRealm() + "/users/" + userId + "/role-mappings/realm";
-        try (Response r = this.deleteJson(url, roles)) {
-            return r.code() == 204;
+        try {
+            try (Response r = this.deleteJson(url, roles)) {
+                return r.code() == 204;
+            }
+        } catch (IOException ex) {
+            throw new SSOIOException(ex);
         }
     }
 
     /**
      * Convenience overload to remove a single realm role from a user.
      */
-    public boolean removeRealmRole(String userId, RealmRole role) throws IOException {
+    public boolean removeRealmRole(String userId, RealmRole role) throws SSOIOException {
         if (role == null) return false;
         return removeRealmRoles(userId, Collections.singletonList(role));
     }
@@ -201,7 +221,7 @@ public class UserManager extends BaseManager {
     /**
      * Convenience overload to remove roles by their names.
      */
-    public boolean removeRealmRoles(String userId, String... roleNames) throws IOException {
+    public boolean removeRealmRoles(String userId, String... roleNames) throws SSOIOException {
         if (roleNames == null || roleNames.length == 0) return false;
         RealmRole[] roles = Arrays.stream(roleNames).filter(n -> n != null && !n.isBlank()).map(RealmRole::new).toArray(RealmRole[]::new);
         return removeRealmRoles(userId, Arrays.asList(roles));
