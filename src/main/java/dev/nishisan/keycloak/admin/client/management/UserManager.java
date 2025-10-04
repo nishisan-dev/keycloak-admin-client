@@ -194,7 +194,7 @@ public class UserManager extends BaseManager {
      * @param userId Keycloak user id
      * @param roles list of realm roles to remove (at minimum, name field should be set)
      * @return true if roles were removed (204 status)
-     * @throws SSOIOException em erros de rede
+     * @throws SSOIOException on network errors
      */
     public boolean removeRealmRoles(String userId, List<RealmRole> roles) throws SSOIOException {
         if (userId == null || userId.isBlank() || roles == null || roles.isEmpty()) {
