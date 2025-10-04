@@ -19,16 +19,15 @@ package dev.nishisan.keycloak.admin.client.management;
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
 import dev.nishisan.keycloak.admin.client.exception.CreateUserException;
 import dev.nishisan.keycloak.admin.client.types.User;
-import java.io.IOException;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import java.io.IOException;
+
 /**
- *
- * @author Lucas Nishimura < lucas at nishisan.dev >
+ * UserManager provides functionality to manage users in a Keycloak SSO environment.
+ * This class allows creating users, retrieving user information, updating user details,
+ * and performing user-related operations through Keycloak's REST API.
  */
 public class UserManager extends BaseManager {
 
