@@ -12,7 +12,7 @@ import okhttp3.Response;
  * Provides functionality for creating and managing roles within a specified Keycloak realm.
  */
 public class RealmManager extends BaseManager {
-    public RealmManager(OkHttpClient httpClient, SSOConfig config) {
+    public RealmManager( SSOConfig config,OkHttpClient httpClient) {
         super(httpClient, config);
     }
 
