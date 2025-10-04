@@ -83,4 +83,12 @@ public class BaseManager {
         logger.debug("DELETE: {}, Payload:{}", req.url(), jsonPayLoad);
         return this.httpClient.newCall(req).execute();
     }
+
+    public Response delete(String url) throws IOException {
+        Request.Builder builder = new Request.Builder();
+        builder.url(url).delete();
+        Request req = builder.build();
+        logger.debug("DELETE: {}", req.url());
+        return this.httpClient.newCall(req).execute();
+    }
 }

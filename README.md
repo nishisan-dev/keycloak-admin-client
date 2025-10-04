@@ -1,6 +1,6 @@
 # Keycloak Admin Client (Java)
 
-A small Java library to interact with Keycloak’s Admin REST API. It manages OAuth2 client-credentials tokens (with auto-refresh + events) and provides basic user management helpers built on OkHttp.
+A small Java library to interact with Keycloak’s Admin REST API. It manages OAuth2 client-credentials tokens (with auto-refresh + events) and provides basic user and realm role management helpers built on OkHttp.
 
 ## Features
 
@@ -50,6 +50,7 @@ import dev.nishisan.keycloak.admin.client.KeycloakAdminClient;
 import dev.nishisan.keycloak.admin.client.auth.TokenResponseWrapper;
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
 import dev.nishisan.keycloak.admin.client.types.User;
+import dev.nishisan.keycloak.admin.client.types.RealmRole;
 
 SSOConfig cfg = new SSOConfig(
     "your-client-id",
@@ -75,6 +76,35 @@ kc.getUserManager().changePassword(newUser.getId(), "NewP@ss!", false);
 
 // Update email
 kc.getUserManager().updateEmail(newUser.getId(), "new-email@example.com");
+
+// --- Realm roles (RealmManager) ---
+// Create a realm role
+RealmRole adminRole = new RealmRole("admin", "Administrator role");
+adminRole = kc.getRealmManager().createRole(adminRole); // id is populated from Location header
+
+// List realm roles
+java.util.List<RealmRole> roles = kc.getRealmManager().listRoles();
+
+// Get realm role by name (returns null if not found)
+RealmRole maybeAdmin = kc.getRealmManager().getRoleByName("admin");
+
+// Delete realm role by name (returns true when 204)
+boolean deleted = kc.getRealmManager().deleteRole("obsolete-role");
+
+// --- Assign/remove roles to a user (UserManager) ---
+String userId = newUser.getId();
+
+// Add realm roles by name
+kc.getUserManager().addRealmRoles(userId, "admin", "auditor");
+
+// Add a single realm role by payload
+kc.getUserManager().addRealmRole(userId, new RealmRole("admin"));
+
+// Remove roles by name
+kc.getUserManager().removeRealmRoles(userId, "auditor");
+
+// Remove a single role by payload
+kc.getUserManager().removeRealmRole(userId, new RealmRole("admin"));
 ```
 
 ### Realm roles (create and assign/remove)
