@@ -72,4 +72,13 @@ public class BaseManager {
         Request req = builder.build();
         return this.httpClient.newCall(req).execute();
     }
+
+    public Response deleteJson(String url, Object payload) throws IOException {
+        Request.Builder builder = new Request.Builder();
+        String jsonPayLoad = this.gson().toJson(payload);
+        RequestBody body = RequestBody.create(jsonPayLoad, MediaType.parse("application/json"));
+        builder.url(url).method("DELETE", body);
+        Request req = builder.build();
+        return this.httpClient.newCall(req).execute();
+    }
 }
