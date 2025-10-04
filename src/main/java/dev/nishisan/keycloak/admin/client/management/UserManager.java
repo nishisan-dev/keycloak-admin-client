@@ -18,11 +18,15 @@ package dev.nishisan.keycloak.admin.client.management;
 
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
 import dev.nishisan.keycloak.admin.client.exception.CreateUserException;
+import dev.nishisan.keycloak.admin.client.types.RealmRole;
 import dev.nishisan.keycloak.admin.client.types.User;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * UserManager provides functionality to manage users in a Keycloak SSO environment.
@@ -125,6 +129,74 @@ public class UserManager extends BaseManager {
         try (Response r = this.putJson(url, payload)) {
             return r.code() == 204;
         }
+    }
+
+    /**
+     * Adds realm-level roles to a user.
+     * @param userId Keycloak user id
+     * @param roles list of realm roles (at minimum, name field should be set)
+     * @return true if roles were added (204 status)
+     * @throws IOException on network errors
+     */
+    public boolean addRealmRoles(String userId, List<RealmRole> roles) throws IOException {
+        if (userId == null || userId.isBlank() || roles == null || roles.isEmpty()) {
+            return false;
+        }
+        String url = this.config.getBaseUrl() + "/admin/realms/" + this.config.getRealm() + "/users/" + userId + "/role-mappings/realm";
+        try (Response r = this.postJson(url, roles)) {
+            return r.code() == 204;
+        }
+    }
+
+    /**
+     * Convenience overload to add a single realm role to a user.
+     */
+    public boolean addRealmRole(String userId, RealmRole role) throws IOException {
+        if (role == null) return false;
+        return addRealmRoles(userId, Collections.singletonList(role));
+    }
+
+    /**
+     * Convenience overload to add roles by their names.
+     */
+    public boolean addRealmRoles(String userId, String... roleNames) throws IOException {
+        if (roleNames == null || roleNames.length == 0) return false;
+        RealmRole[] roles = Arrays.stream(roleNames).filter(n -> n != null && !n.isBlank()).map(RealmRole::new).toArray(RealmRole[]::new);
+        return addRealmRoles(userId, Arrays.asList(roles));
+    }
+
+    /**
+     * Removes realm-level roles from a user.
+     * @param userId Keycloak user id
+     * @param roles list of realm roles to remove (at minimum, name field should be set)
+     * @return true if roles were removed (204 status)
+     * @throws IOException on network errors
+     */
+    public boolean removeRealmRoles(String userId, List<RealmRole> roles) throws IOException {
+        if (userId == null || userId.isBlank() || roles == null || roles.isEmpty()) {
+            return false;
+        }
+        String url = this.config.getBaseUrl() + "/admin/realms/" + this.config.getRealm() + "/users/" + userId + "/role-mappings/realm";
+        try (Response r = this.deleteJson(url, roles)) {
+            return r.code() == 204;
+        }
+    }
+
+    /**
+     * Convenience overload to remove a single realm role from a user.
+     */
+    public boolean removeRealmRole(String userId, RealmRole role) throws IOException {
+        if (role == null) return false;
+        return removeRealmRoles(userId, Collections.singletonList(role));
+    }
+
+    /**
+     * Convenience overload to remove roles by their names.
+     */
+    public boolean removeRealmRoles(String userId, String... roleNames) throws IOException {
+        if (roleNames == null || roleNames.length == 0) return false;
+        RealmRole[] roles = Arrays.stream(roleNames).filter(n -> n != null && !n.isBlank()).map(RealmRole::new).toArray(RealmRole[]::new);
+        return removeRealmRoles(userId, Arrays.asList(roles));
     }
 
 }
