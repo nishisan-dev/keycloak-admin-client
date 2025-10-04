@@ -18,6 +18,7 @@ package dev.nishisan.keycloak.admin.client;
 
 import dev.nishisan.keycloak.admin.client.auth.KeyCloakOAuthClientManager;
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
+import dev.nishisan.keycloak.admin.client.management.RealmManager;
 import dev.nishisan.keycloak.admin.client.management.UserManager;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -44,6 +45,7 @@ public class KeycloakAdminClient {
     private KeyCloakOAuthClientManager tokenManager;
     private OkHttpClient httpClient;
     private UserManager userManager;
+    private RealmManager realmManager;
     private final Logger logger = LoggerFactory.getLogger(KeycloakAdminClient.class);
 
     public KeycloakAdminClient(SSOConfig config) {
@@ -62,6 +64,7 @@ public class KeycloakAdminClient {
 
     private void initManagers() {
         this.userManager = new UserManager(config, httpClient);
+        this.realmManager = new RealmManager(config,httpClient);
     }
 
     public KeyCloakOAuthClientManager getTokenManager() {
@@ -140,6 +143,10 @@ public class KeycloakAdminClient {
 
     public UserManager getUserManager() {
         return this.userManager;
+    }
+
+    public RealmManager getRealmManager() {
+        return this.realmManager;
     }
 
 }
