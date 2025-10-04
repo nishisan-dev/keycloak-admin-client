@@ -144,7 +144,15 @@ public class UserManager extends BaseManager {
         }
         String url = this.config.getBaseUrl() + "/admin/realms/" + this.config.getRealm() + "/users/" + userId + "/role-mappings/realm";
         try (Response r = this.postJson(url, roles)) {
-            return r.code() == 204;
+            if (r.code()==204){
+                logger.debug("Realm Roles added to user: {}", userId);
+                return true;
+            }else{
+                logger.warn("Failed to add realm roles to user: {}", userId);
+                logger.warn("Response: {}", r.body().string());
+                return false;
+            }
+
         }
     }
 

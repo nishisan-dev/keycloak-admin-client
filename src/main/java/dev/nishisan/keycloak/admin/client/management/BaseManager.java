@@ -19,13 +19,11 @@ package dev.nishisan.keycloak.admin.client.management;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
-import dev.nishisan.keycloak.admin.client.exception.CreateUserException;
+import okhttp3.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 /**
  *
@@ -36,6 +34,7 @@ public class BaseManager {
     private Gson gson = new GsonBuilder().setPrettyPrinting().create();
     protected final OkHttpClient httpClient;
     protected final SSOConfig config;
+    protected final Logger logger = LoggerFactory.getLogger(BaseManager.class);
 
     public BaseManager(OkHttpClient httpClient, SSOConfig config) {
         this.httpClient = httpClient;
@@ -52,7 +51,7 @@ public class BaseManager {
         RequestBody body = RequestBody.create(jsonPayLoad, MediaType.parse("application/json"));
         builder.url(url).method("POST", body);
         Request req = builder.build();
-
+        logger.debug("POST: {}, Payload:{}", req.url(), jsonPayLoad);
         Response r = this.httpClient.newCall(req).execute();
         return r;
     }
@@ -63,6 +62,7 @@ public class BaseManager {
         RequestBody body = RequestBody.create(jsonPayLoad, MediaType.parse("application/json"));
         builder.url(url).method("PUT", body);
         Request req = builder.build();
+        logger.debug("PUT: {}, Payload:{}", req.url(), jsonPayLoad);
         return this.httpClient.newCall(req).execute();
     }
 
@@ -70,6 +70,7 @@ public class BaseManager {
         Request.Builder builder = new Request.Builder();
         builder.url(url).get();
         Request req = builder.build();
+        logger.debug("GET: {}", req.url());
         return this.httpClient.newCall(req).execute();
     }
 
@@ -79,6 +80,7 @@ public class BaseManager {
         RequestBody body = RequestBody.create(jsonPayLoad, MediaType.parse("application/json"));
         builder.url(url).method("DELETE", body);
         Request req = builder.build();
+        logger.debug("DELETE: {}, Payload:{}", req.url(), jsonPayLoad);
         return this.httpClient.newCall(req).execute();
     }
 }
