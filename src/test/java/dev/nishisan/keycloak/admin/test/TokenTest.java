@@ -23,6 +23,7 @@ import dev.nishisan.keycloak.admin.client.auth.TokenResponseWrapper;
 import dev.nishisan.keycloak.admin.client.config.SSOConfig;
 import dev.nishisan.keycloak.admin.client.events.ITokenEventListener;
 import dev.nishisan.keycloak.admin.client.exception.CreateUserException;
+import dev.nishisan.keycloak.admin.client.exception.SSOIOException;
 import dev.nishisan.keycloak.admin.client.types.User;
 import java.io.File;
 import java.io.IOException;
@@ -89,7 +90,7 @@ public class TokenTest {
                 Logger.getLogger(TokenTest.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-        } catch (IOException ex) {
+        } catch (SSOIOException |IOException ex) {
             Logger.getLogger(TokenTest.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
